@@ -5,3 +5,4 @@ requests
 fpdf
 pillow
 python-dotenv
+jinja2
