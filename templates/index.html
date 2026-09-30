@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComicCraft AI Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #070913;
+            --card-bg: rgba(18, 22, 41, 0.85);
+            --neon-yellow: #ffee00;
+            --neon-pink: #ff0055;
+            --neon-cyan: #00f0ff;
+            --text-main: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(rgba(255, 238, 0, 0.1) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text-main);
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 50px 20px;
+        }
+
+        h1.title {
+            font-family: 'Bangers', cursive;
+            font-size: 4.5rem;
+            color: var(--neon-yellow);
+            text-shadow: 4px 4px 0px var(--neon-pink), 8px 8px 0px var(--neon-cyan);
+            margin-bottom: 10px;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            border: 3px solid #1e293b;
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 750px;
+            margin: 30px auto;
+        }
+
+        textarea {
+            width: 100%;
+            height: 110px;
+            background: rgba(7, 9, 19, 0.8);
+            border: 2px solid #334155;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 1.05rem;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .generate-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--neon-yellow), #ff9900);
+            color: #000;
+            border: 3px solid #000;
+            padding: 14px 45px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 5px 5px 0px #000;
+        }
+
+        .comic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 4px solid #000;
+            border-radius: 20px;
+            padding: 22px;
+            text-align: left;
+            box-shadow: 10px 10px 0px var(--neon-cyan);
+        }
+
+        .panel-badge {
+            display: inline-block;
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            background: var(--neon-pink);
+            color: #fff;
+            padding: 4px 16px;
+            border-radius: 8px;
+            border: 2px solid #000;
+            margin-bottom: 15px;
+        }
+
+        .speech-bubble {
+            background: #ffffff;
+            color: #000000;
+            font-weight: 800;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 3px solid #000;
+            margin-top: 15px;
+        }
+
+        #loading { display: none; font-family: 'Bangers', cursive; font-size: 2rem; color: var(--neon-cyan); margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">ComicCraft AI</h1>
+        <p>Transform simple prompts into dynamic 4-panel comic storyboards instantly.</p>
+
+        <div class="form-card">
+            <textarea id="prompt" placeholder="A cybernetic ninja eating pizza on a neon rooftop..."></textarea>
+            <button class="generate-btn" onclick="generateComic()">⚡ GENERATE PANELS</button>
+        </div>
+
+        <div id="loading">💥 INKING YOUR STORYBOARDS...</div>
+        
+        <h2 id="comic-title" style="font-family: 'Bangers'; font-size: 3rem; color: var(--neon-yellow);"></h2>
+        <div id="grid" class="comic-grid"></div>
+    </div>
+
+    <script>
+        async function generateComic() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('grid');
+            const titleEl = document.getElementById('comic-title');
+            
+            const oldBtn = document.getElementById('pdf-download-btn');
+            if (oldBtn) oldBtn.remove();
+
+            if (!prompt) return alert('Enter a story prompt to begin!');
+
+            loading.style.display = 'block';
+            grid.innerHTML = '';
+            titleEl.textContent = '';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                loading.style.display = 'none';
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                titleEl.textContent = data.title;
+
+                data.panels.forEach((panel) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    // Here is the image tag pointing to the .jpg!
+                    card.innerHTML = `
+                        <div class="panel-badge">PANEL 0${panel.panel_number}</div>
+                        <img src="/static/panel_${panel.panel_number}.jpg?t=${new Date().getTime()}" style="width: 100%; border-radius: 12px; border: 2px solid #334155; margin-bottom: 15px;">
+                        <div style="color: #cbd5e1; margin-bottom: 15px;"><b>Visual:</b> ${panel.visual_description}</div>
+                        <div class="speech-bubble">💬 "${panel.dialogue}"</div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                if (data.pdf_url) {
+                    const pdfBtn = document.createElement('a');
+                    pdfBtn.id = 'pdf-download-btn';
+                    pdfBtn.href = data.pdf_url;
+                    pdfBtn.target = "_blank";
+                    pdfBtn.className = "generate-btn";
+                    pdfBtn.style = "display: inline-block; margin-top: 40px; text-decoration: none;";
+                    pdfBtn.innerHTML = "📄 DOWNLOAD COMIC PDF";
+                    grid.parentElement.appendChild(pdfBtn);
+                }
+
+            } catch (err) {
+                loading.style.display = 'none';
+                alert('Generation failed: ' + err);
+            }
+        }
+    </script>
+</body>
+</html>
