@@ -6,3 +6,4 @@ fpdf
 pillow
 python-dotenv
 jinja2
+google-genai
